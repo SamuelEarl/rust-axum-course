@@ -1,0 +1,13 @@
+# This profile is not actually necessary because the `bacon run` command already does everything that is defined in this profile:
+# clears the terminal before each run, watches only src/, and runs your program.
+# I am just including this here for documentation purposes.
+# [run]
+# command = ["cargo", "run"]
+# clear = true
+# watch = ["src"]
+
+# This does not work:
+# [jobs.test]
+# command = ["cargo", "test", "--", "--test", "quick_dev", "quick_dev", "--", "--nocapture"]
+# clear = true
+# watch = ["tests"]
