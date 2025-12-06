@@ -1,33 +1,33 @@
 #![allow(unused)] // For beginning only.
 
 use axum::{
+    Router, 
     extract::{
         Path,
         Query,
-    },
+    }, 
+    http::StatusCode, 
     response::{
         Html,
         IntoResponse,
-    },
-    routing::get,
-    Router,
+    }, 
+    routing::{
+        MethodRouter, 
+        get, 
+        get_service
+    }
 };
 use serde::Deserialize;
 use std::net::SocketAddr;
 use tokio::net::TcpListener;
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() {
     // Create a route.
-    let query_params_route_example = Router::new()
-        .route(
-            "/query-params-route",
-            get(query_params_handler),
-        )
-        .route(
-            "/path-params-route/{name}",
-            get(path_params_handler),
-        );
+    let app = Router::new()
+        .merge(app_router())
+        .fallback_service(static_routes());
 
     // Define the address to bind to.
     let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
@@ -37,7 +37,27 @@ async fn main() {
     let listener = TcpListener::bind(&addr).await.unwrap();
 
     // Serve the Axum application with the listener.
-    axum::serve(listener, query_params_route_example).await.unwrap();
+    axum::serve(listener, app).await.unwrap();
+}
+
+fn app_router() -> Router {
+    return Router::new()
+        .route(
+            "/query-params-route",
+            get(query_params_handler),
+        )
+        .route(
+            "/path-params-route/{name}",
+            get(path_params_handler),
+        );
+}
+
+fn static_routes() -> MethodRouter {
+    async fn handle_404() -> (StatusCode, &'static str) {
+        return (StatusCode::NOT_FOUND, "Resource not found.");
+    }
+
+    return get_service(ServeDir::new("/").not_found_service(handle_404.into_service()));
 }
 
 // Traits are used to define shared behaviors — like printing, comparing, cloning, or serializing.
